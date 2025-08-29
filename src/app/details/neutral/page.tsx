@@ -3,7 +3,7 @@ import { NeutralDetails } from '@/components/details/neutral-details'
 import { BackButton } from '@/components/back-button'
 
 export const metadata = {
-  title: 'Neutral Sentiment Details | VIBE AI',
+  title: 'Neutral Sentiment Details | STOCK\'er',
   description: 'Detailed analysis of neutral sentiment data',
 }
 

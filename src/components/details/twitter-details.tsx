@@ -3,12 +3,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ActivityFeed } from "@/components/ui/activity-feed"
+import { ActivityFeed, ActivityItem } from "@/components/ui/activity-feed"
 import { useState, useEffect } from "react"
 import { fetchMentionsData, type MentionData } from "@/lib/actions"
 
 export function TwitterDetails() {
-  const [activities, setActivities] = useState<MentionData[]>([])
+  const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export function TwitterDetails() {
                 <Badge className="status-bullish">234K followers</Badge>
               </div>
               <div className="text-sm text-muted-foreground">
-                "iPhone 16 Pro pre-orders exceeding expectations! 🚀"
+                &quot;iPhone 16 Pro pre-orders exceeding expectations! 🚀&quot;
               </div>
               <div className="text-xs text-accent mt-2">
                 Engagement: 15.2K • Sentiment: 9.2/10
@@ -156,7 +156,7 @@ export function TwitterDetails() {
                 <Badge className="status-accent">1.2M followers</Badge>
               </div>
               <div className="text-sm text-muted-foreground">
-                "Apple Intelligence features getting strong user adoption"
+                &quot;Apple Intelligence features getting strong user adoption&quot;
               </div>
               <div className="text-xs text-accent mt-2">
                 Engagement: 28.7K • Sentiment: 8.8/10
@@ -169,7 +169,7 @@ export function TwitterDetails() {
                 <Badge className="status-neutral">890K followers</Badge>
               </div>
               <div className="text-sm text-muted-foreground">
-                "AAPL trading sideways as investors await guidance"
+                &quot;AAPL trading sideways as investors await guidance&quot;
               </div>
               <div className="text-xs text-accent mt-2">
                 Engagement: 8.9K • Sentiment: 5.1/10
@@ -182,7 +182,7 @@ export function TwitterDetails() {
                 <Badge className="status-bullish">156K followers</Badge>
               </div>
               <div className="text-sm text-muted-foreground">
-                "New camera features are absolutely incredible! 📸"
+                &quot;New camera features are absolutely incredible! 📸&quot;
               </div>
               <div className="text-xs text-accent mt-2">
                 Engagement: 5.6K • Sentiment: 9.5/10

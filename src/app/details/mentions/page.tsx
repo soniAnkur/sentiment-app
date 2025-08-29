@@ -3,7 +3,7 @@ import { MentionsDetails } from '@/components/details/mentions-details'
 import { BackButton } from '@/components/back-button'
 
 export const metadata = {
-  title: 'Mentions Details | VIBE AI',
+  title: 'Mentions Details | STOCK\'er',
   description: 'Detailed analysis of social media mentions',
 }
 

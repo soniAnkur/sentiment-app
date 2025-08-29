@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VIBE AI | Stock Sentiment Analysis",
+  title: "STOCK'er | Stock Sentiment Analysis",
   description: "Real-time stock sentiment analysis powered by AI",
   keywords: ["stock", "sentiment", "analysis", "AI", "trading", "finance"],
-  authors: [{ name: "VIBE AI" }],
+  authors: [{ name: "STOCK'er" }],
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 

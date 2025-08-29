@@ -1,0 +1,213 @@
+{
+  "name": "Reddit Sentiment Analysis Workflow",
+  "active": false,
+  "createdAt": "2025-08-29T00:00:00.000Z",
+  "updatedAt": "2025-08-29T00:00:00.000Z",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "reddit-sentiment",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "reddit-sentiment-trigger"
+    },
+    {
+      "parameters": {
+        "resource": "posts",
+        "operation": "getAll",
+        "subreddit": "={{ $json.subreddit || 'stocks' }}",
+        "limit": 25,
+        "sort": "hot"
+      },
+      "id": "reddit-fetch",
+      "name": "Fetch Reddit Posts",
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "resource": "comments",
+        "operation": "getAll",
+        "postId": "={{ $json.id }}",
+        "limit": 10,
+        "sort": "top"
+      },
+      "id": "reddit-comments",
+      "name": "Fetch Comments",
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst stock = $node['Webhook Trigger'].json.stock || 'AAPL';\n\nconst processedItems = items.map(item => {\n  // Simple sentiment analysis based on keywords\n  const text = (item.json.title + ' ' + item.json.selftext + ' ' + (item.json.body || '')).toLowerCase();\n  \n  const bullishWords = ['buy', 'bullish', 'moon', 'rocket', 'pump', 'up', 'rise', 'gain', 'profit', 'bull', 'strong', 'positive'];\n  const bearishWords = ['sell', 'bearish', 'crash', 'dump', 'down', 'fall', 'loss', 'bear', 'weak', 'negative', 'short'];\n  \n  let sentimentScore = 50; // neutral baseline\n  let bullishCount = 0;\n  let bearishCount = 0;\n  \n  bullishWords.forEach(word => {\n    if (text.includes(word)) bullishCount++;\n  });\n  \n  bearishWords.forEach(word => {\n    if (text.includes(word)) bearishCount++;\n  });\n  \n  // Calculate sentiment score (0-100)\n  if (bullishCount > bearishCount) {\n    sentimentScore = Math.min(100, 50 + (bullishCount - bearishCount) * 10);\n  } else if (bearishCount > bullishCount) {\n    sentimentScore = Math.max(0, 50 - (bearishCount - bullishCount) * 10);\n  }\n  \n  const sentiment = sentimentScore >= 65 ? 'bullish' : sentimentScore <= 35 ? 'bearish' : 'neutral';\n  \n  return {\n    json: {\n      id: item.json.id || Math.random().toString(36).substr(2, 9),\n      platform: 'reddit',\n      title: item.json.title,\n      content: item.json.selftext || item.json.body || item.json.title,\n      author: item.json.author,\n      timestamp: new Date(item.json.created_utc * 1000).toISOString(),\n      url: `https://reddit.com${item.json.permalink}`,\n      upvotes: item.json.ups || 0,\n      comments: item.json.num_comments || 0,\n      subreddit: item.json.subreddit,\n      stock: stock,\n      sentiment: sentiment,\n      sentimentScore: sentimentScore,\n      metadata: {\n        upvotes: item.json.ups || 0,\n        comments: item.json.num_comments || 0,\n        awards: item.json.total_awards_received || 0\n      }\n    }\n  };\n});\n\nreturn processedItems;"
+      },
+      "id": "sentiment-analysis",
+      "name": "Sentiment Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "upsert",
+        "table": "reddit_sentiment",
+        "columnToMatchOn": "id",
+        "fieldsToMatch": "id",
+        "additionalFields": {
+          "platform": "={{ $json.platform }}",
+          "title": "={{ $json.title }}",
+          "content": "={{ $json.content }}",
+          "author": "={{ $json.author }}",
+          "timestamp": "={{ $json.timestamp }}",
+          "url": "={{ $json.url }}",
+          "upvotes": "={{ $json.upvotes }}",
+          "comments": "={{ $json.comments }}",
+          "subreddit": "={{ $json.subreddit }}",
+          "stock": "={{ $json.stock }}",
+          "sentiment": "={{ $json.sentiment }}",
+          "sentiment_score": "={{ $json.sentimentScore }}",
+          "metadata": "={{ JSON.stringify($json.metadata) }}"
+        }
+      },
+      "id": "database-store",
+      "name": "Store in Database",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Calculate aggregated sentiment data\nconst totalPosts = items.length;\nconst bullishPosts = items.filter(item => item.json.sentiment === 'bullish').length;\nconst bearishPosts = items.filter(item => item.json.sentiment === 'bearish').length;\nconst neutralPosts = items.filter(item => item.json.sentiment === 'neutral').length;\n\nconst avgSentimentScore = items.reduce((sum, item) => sum + item.json.sentimentScore, 0) / totalPosts;\n\nconst result = {\n  stock: items[0]?.json.stock || 'AAPL',\n  platform: 'reddit',\n  timestamp: new Date().toISOString(),\n  totalMentions: totalPosts,\n  sentimentScore: Math.round(avgSentimentScore),\n  positivePercentage: Math.round((bullishPosts / totalPosts) * 100),\n  negativePercentage: Math.round((bearishPosts / totalPosts) * 100),\n  neutralPercentage: Math.round((neutralPosts / totalPosts) * 100),\n  topPosts: items\n    .sort((a, b) => b.json.upvotes - a.json.upvotes)\n    .slice(0, 5)\n    .map(item => ({\n      id: item.json.id,\n      title: item.json.title,\n      content: item.json.content.substring(0, 200) + '...',\n      author: item.json.author,\n      upvotes: item.json.upvotes,\n      comments: item.json.comments,\n      sentiment: item.json.sentiment,\n      sentimentScore: item.json.sentimentScore,\n      url: item.json.url\n    })),\n  metadata: {\n    subreddit: items[0]?.json.subreddit || 'stocks',\n    totalUpvotes: items.reduce((sum, item) => sum + item.json.upvotes, 0),\n    totalComments: items.reduce((sum, item) => sum + item.json.comments, 0),\n    processedAt: new Date().toISOString()\n  }\n};\n\nreturn { json: result };"
+      },
+      "id": "aggregate-data",
+      "name": "Aggregate Sentiment Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-response",
+      "name": "Return Aggregated Data",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Reddit Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Reddit Posts": {
+      "main": [
+        [
+          {
+            "node": "Fetch Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Comments": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Store in Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store in Database": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Sentiment Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Sentiment Data": {
+      "main": [
+        [
+          {
+            "node": "Return Aggregated Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": [
+    {
+      "id": "1",
+      "name": "reddit"
+    },
+    {
+      "id": "2", 
+      "name": "sentiment"
+    },
+    {
+      "id": "3",
+      "name": "stock"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "1"
+}

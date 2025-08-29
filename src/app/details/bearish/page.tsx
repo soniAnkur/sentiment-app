@@ -3,7 +3,7 @@ import { BearishDetails } from '@/components/details/bearish-details'
 import { BackButton } from '@/components/back-button'
 
 export const metadata = {
-  title: 'Bearish Sentiment Details | VIBE AI',
+  title: 'Bearish Sentiment Details | STOCK\'er',
   description: 'Detailed analysis of bearish sentiment data',
 }
 

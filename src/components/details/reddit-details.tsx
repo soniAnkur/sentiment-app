@@ -1,0 +1,458 @@
+"use client"
+
+import { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { RefreshCw, ExternalLink, ArrowUp, MessageCircle, Send, Activity, Database, Wifi } from 'lucide-react'
+
+interface RedditPost {
+  id: string
+  title: string
+  content: string
+  author: string
+  upvotes: number
+  comments: number
+  sentiment: 'bullish' | 'bearish' | 'neutral'
+  sentimentScore: number
+  url: string
+  subreddit?: string
+}
+
+interface RedditSentimentData {
+  stock: string
+  platform: string
+  timestamp: string
+  totalMentions: number
+  sentimentScore: number
+  positivePercentage: number
+  negativePercentage: number
+  neutralPercentage: number
+  topPosts: RedditPost[]
+  metadata: {
+    subreddit: string
+    totalUpvotes: number
+    totalComments: number
+    processedAt: string
+  }
+}
+
+export function RedditDetails() {
+  const [data, setData] = useState<RedditSentimentData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedStock, setSelectedStock] = useState('AAPL')
+  const [selectedSubreddit, setSelectedSubreddit] = useState('stocks')
+  const [publishingToN8n, setPublishingToN8n] = useState(false)
+  const [n8nStatus, setN8nStatus] = useState<'connected' | 'disconnected' | 'unknown'>('unknown')
+  const [useStaticData, setUseStaticData] = useState(false)
+
+  const fetchRedditData = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Build URL with static parameter if enabled
+      const url = `/api/reddit-sentiment?stock=${selectedStock}&subreddit=${selectedSubreddit}${useStaticData ? '&static=true' : ''}`
+      const response = await fetch(url)
+      
+      if (response.ok) {
+        const redditData = await response.json()
+        setData(redditData)
+        // Check data source and update status accordingly
+        const source = redditData.metadata?.source
+        if (useStaticData) {
+          setN8nStatus('disconnected') // Static mode is explicitly offline
+        } else {
+          setN8nStatus(source === 'n8n' ? 'connected' : 'disconnected')
+        }
+      } else {
+        // Final fallback to mock data
+        setData(generateMockRedditData())
+        setN8nStatus('disconnected')
+      }
+    } catch (error) {
+      console.error('Error fetching Reddit data:', error)
+      // Use mock data as fallback
+      setData(generateMockRedditData())
+      setN8nStatus('disconnected')
+    }
+    setLoading(false)
+  }, [selectedStock, selectedSubreddit, useStaticData])
+
+  const publishDataToN8n = async () => {
+    if (!data) return
+    
+    setPublishingToN8n(true)
+    try {
+      const response = await fetch('/api/reddit-sentiment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          webhookPath: 'sentiment-analysis/reddit-data',
+          data: {
+            ...data,
+            publishedAt: new Date().toISOString(),
+            publishedBy: 'reddit-details-page'
+          }
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log('Successfully published to N8n')
+        setN8nStatus('connected')
+      } else {
+        console.error('Failed to publish to N8n:', result.message)
+        setN8nStatus('disconnected')
+      }
+    } catch (error) {
+      console.error('Error publishing to N8n:', error)
+      setN8nStatus('disconnected')
+    }
+    setPublishingToN8n(false)
+  }
+
+  const generateMockRedditData = (): RedditSentimentData => {
+    const mockPosts: RedditPost[] = [
+      {
+        id: 'post1',
+        title: `${selectedStock} is looking bullish - strong fundamentals and momentum`,
+        content: 'The technical analysis shows strong support levels and the company fundamentals are solid. This could be a good long-term play...',
+        author: 'InvestorPro',
+        upvotes: 245,
+        comments: 67,
+        sentiment: 'bullish',
+        sentimentScore: 78,
+        url: 'https://reddit.com/r/stocks/comments/example1',
+        subreddit: selectedSubreddit
+      },
+      {
+        id: 'post2',
+        title: `Concerns about ${selectedStock} - market volatility ahead`,
+        content: 'Recent earnings miss and market uncertainty make me cautious about this position. Might consider taking profits...',
+        author: 'CautiousTrader',
+        upvotes: 134,
+        comments: 45,
+        sentiment: 'bearish',
+        sentimentScore: 25,
+        url: 'https://reddit.com/r/stocks/comments/example2',
+        subreddit: selectedSubreddit
+      },
+      {
+        id: 'post3',
+        title: `${selectedStock} quarterly results discussion`,
+        content: 'Mixed results this quarter. Revenue beat expectations but margins compressed. Neutral outlook for now...',
+        author: 'AnalystView',
+        upvotes: 89,
+        comments: 23,
+        sentiment: 'neutral',
+        sentimentScore: 52,
+        url: 'https://reddit.com/r/stocks/comments/example3',
+        subreddit: selectedSubreddit
+      },
+      {
+        id: 'post4',
+        title: `Why ${selectedStock} could moon - DD inside`,
+        content: 'Comprehensive analysis showing multiple catalysts: new product launches, market expansion, and strong management...',
+        author: 'DDMaster',
+        upvotes: 512,
+        comments: 156,
+        sentiment: 'bullish',
+        sentimentScore: 85,
+        url: 'https://reddit.com/r/stocks/comments/example4',
+        subreddit: selectedSubreddit
+      },
+      {
+        id: 'post5',
+        title: `${selectedStock} technical analysis - key levels to watch`,
+        content: 'Breaking down the charts and key support/resistance levels. Current price action suggests consolidation...',
+        author: 'ChartWizard',
+        upvotes: 178,
+        comments: 34,
+        sentiment: 'neutral',
+        sentimentScore: 48,
+        url: 'https://reddit.com/r/stocks/comments/example5',
+        subreddit: selectedSubreddit
+      }
+    ]
+
+    const totalPosts = mockPosts.length
+    const bullishPosts = mockPosts.filter(p => p.sentiment === 'bullish').length
+    const bearishPosts = mockPosts.filter(p => p.sentiment === 'bearish').length
+    const neutralPosts = mockPosts.filter(p => p.sentiment === 'neutral').length
+
+    return {
+      stock: selectedStock,
+      platform: 'reddit',
+      timestamp: new Date().toISOString(),
+      totalMentions: totalPosts,
+      sentimentScore: Math.round(mockPosts.reduce((sum, post) => sum + post.sentimentScore, 0) / totalPosts),
+      positivePercentage: Math.round((bullishPosts / totalPosts) * 100),
+      negativePercentage: Math.round((bearishPosts / totalPosts) * 100),
+      neutralPercentage: Math.round((neutralPosts / totalPosts) * 100),
+      topPosts: mockPosts.sort((a, b) => b.upvotes - a.upvotes),
+      metadata: {
+        subreddit: selectedSubreddit,
+        totalUpvotes: mockPosts.reduce((sum, post) => sum + post.upvotes, 0),
+        totalComments: mockPosts.reduce((sum, post) => sum + post.comments, 0),
+        processedAt: new Date().toISOString()
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchRedditData()
+  }, [fetchRedditData])
+
+  const getSentimentBadgeVariant = (sentiment: string) => {
+    switch (sentiment) {
+      case 'bullish':
+        return 'default'
+      case 'bearish':
+        return 'destructive'
+      default:
+        return 'secondary'
+    }
+  }
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'bullish':
+        return 'text-green-400'
+      case 'bearish':
+        return 'text-red-400'
+      default:
+        return 'text-yellow-400'
+    }
+  }
+
+  if (loading) {
+    return <div className="console-text text-center py-8">Loading Reddit data...</div>
+  }
+
+  if (!data) {
+    return <div className="console-text text-center py-8">No Reddit data available</div>
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Controls */}
+      <Card className="glass-card">
+        <CardContent className="flex flex-wrap gap-4 items-center justify-between p-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div>
+              <label className="console-text text-sm font-medium mb-2 block">Stock Symbol</label>
+              <select 
+                value={selectedStock}
+                onChange={(e) => setSelectedStock(e.target.value)}
+                className="console-text bg-background border border-border rounded px-3 py-2"
+              >
+                <option value="AAPL">AAPL</option>
+                <option value="TSLA">TSLA</option>
+                <option value="GOOGL">GOOGL</option>
+                <option value="MSFT">MSFT</option>
+                <option value="AMZN">AMZN</option>
+              </select>
+            </div>
+            <div>
+              <label className="console-text text-sm font-medium mb-2 block">Subreddit</label>
+              <select 
+                value={selectedSubreddit}
+                onChange={(e) => setSelectedSubreddit(e.target.value)}
+                className="console-text bg-background border border-border rounded px-3 py-2"
+              >
+                <option value="stocks">r/stocks</option>
+                <option value="investing">r/investing</option>
+                <option value="SecurityAnalysis">r/SecurityAnalysis</option>
+                <option value="ValueInvesting">r/ValueInvesting</option>
+                <option value="StockMarket">r/StockMarket</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              onClick={() => setUseStaticData(!useStaticData)}
+              variant={useStaticData ? "default" : "outline"}
+              className="console-text"
+            >
+              {useStaticData ? (
+                <Database className="w-4 h-4 mr-2" />
+              ) : (
+                <Wifi className="w-4 h-4 mr-2" />
+              )}
+              {useStaticData ? 'Static Data' : 'Live Data'}
+            </Button>
+            <Button onClick={fetchRedditData} className="console-text">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </Button>
+            <Button 
+              onClick={publishDataToN8n} 
+              disabled={!data || publishingToN8n || useStaticData}
+              variant="outline" 
+              className="console-text"
+            >
+              {publishingToN8n ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Publish to N8n
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Stats */}
+      <Card className="glass-card">
+        <div className="console-indicator top-left" />
+        <div className="console-indicator top-right" />
+        
+        <CardHeader>
+          <CardTitle className="console-text flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary/20 text-primary border-primary/30">
+                r/{data.metadata.subreddit}
+              </Badge>
+              <span>Reddit Sentiment Analysis - {data.stock}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {useStaticData ? (
+                <>
+                  <Database className="w-4 h-4 text-blue-400" />
+                  <Badge variant="secondary">
+                    STATIC DATA MODE
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <Activity className={`w-4 h-4 ${
+                    n8nStatus === 'connected' ? 'text-green-400' : 
+                    n8nStatus === 'disconnected' ? 'text-red-400' : 
+                    'text-yellow-400'
+                  }`} />
+                  <Badge variant={
+                    n8nStatus === 'connected' ? 'default' : 
+                    n8nStatus === 'disconnected' ? 'destructive' : 
+                    'secondary'
+                  }>
+                    N8N: {n8nStatus === 'connected' ? 'Connected' : 
+                          n8nStatus === 'disconnected' ? 'Offline' : 
+                          'Unknown'}
+                  </Badge>
+                </>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="console-text text-2xl font-bold">{data.totalMentions}</div>
+              <div className="console-text text-sm text-muted-foreground">Total Posts</div>
+            </div>
+            <div className="text-center">
+              <div className="console-text text-2xl font-bold">{data.sentimentScore}</div>
+              <div className="console-text text-sm text-muted-foreground">Sentiment Score</div>
+            </div>
+            <div className="text-center">
+              <div className="console-text text-2xl font-bold text-green-400">{data.positivePercentage}%</div>
+              <div className="console-text text-sm text-muted-foreground">Bullish</div>
+            </div>
+            <div className="text-center">
+              <div className="console-text text-2xl font-bold text-red-400">{data.negativePercentage}%</div>
+              <div className="console-text text-sm text-muted-foreground">Bearish</div>
+            </div>
+            <div className="text-center">
+              <div className="console-text text-2xl font-bold text-yellow-400">{data.neutralPercentage}%</div>
+              <div className="console-text text-sm text-muted-foreground">Neutral</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between console-text text-sm text-muted-foreground">
+            <span>📊 {data.metadata.totalUpvotes.toLocaleString()} total upvotes</span>
+            <span>💬 {data.metadata.totalComments.toLocaleString()} total comments</span>
+            <span>⏰ {new Date(data.metadata.processedAt).toLocaleTimeString()}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Top Posts */}
+      <div className="space-y-4">
+        <h2 className="console-text text-xl font-semibold">Top Discussions</h2>
+        {data.topPosts.map((post) => (
+          <Card key={post.id} className="glass-card hover:scale-[1.01] transition-transform">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-4">
+                <CardTitle className="console-text text-lg leading-tight flex-1">
+                  {post.title}
+                </CardTitle>
+                <Badge variant={getSentimentBadgeVariant(post.sentiment)} className="shrink-0">
+                  {post.sentiment.toUpperCase()}
+                </Badge>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <p className="console-text text-muted-foreground text-sm leading-relaxed">
+                {post.content}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 console-text text-sm text-muted-foreground">
+                  <span>u/{post.author}</span>
+                  <div className="flex items-center gap-1">
+                    <ArrowUp className="w-4 h-4" />
+                    {post.upvotes.toLocaleString()}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="w-4 h-4" />
+                    {post.comments}
+                  </div>
+                  <div className={`font-medium ${getSentimentColor(post.sentiment)}`}>
+                    Score: {post.sentimentScore}
+                  </div>
+                </div>
+                
+                <Button variant="outline" size="sm" className="console-text" asChild>
+                  <a href={post.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View on Reddit
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Footer Info */}
+      <Card className="glass-card">
+        <CardContent className="p-4 text-center console-text text-sm text-muted-foreground">
+          <p>
+            Data sourced from r/{data.metadata.subreddit} • 
+            {useStaticData ? 'Static sample data' : 'Sentiment analysis powered by N8N workflow'} • 
+            Last updated: {new Date(data.timestamp).toLocaleString()}
+          </p>
+          <p className="mt-2">
+            <Badge 
+              variant="outline" 
+              className={useStaticData ? "bg-blue-500/10 border-blue-500/30 text-blue-400" : "status-bullish animate-blink"}
+            >
+              {useStaticData ? (
+                <>
+                  <Database className="w-3 h-3 mr-1" />
+                  STATIC DATA
+                </>
+              ) : (
+                '🔄 LIVE REDDIT DATA'
+              )}
+            </Badge>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

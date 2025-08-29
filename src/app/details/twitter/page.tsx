@@ -3,7 +3,7 @@ import { TwitterDetails } from '@/components/details/twitter-details'
 import { BackButton } from '@/components/back-button'
 
 export const metadata = {
-  title: 'Twitter/X Details | VIBE AI',
+  title: 'Twitter/X Details | STOCK\'er',
   description: 'Detailed analysis of Twitter/X sentiment data',
 }
 

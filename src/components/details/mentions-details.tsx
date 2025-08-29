@@ -3,12 +3,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ActivityFeed } from "@/components/ui/activity-feed"
+import { ActivityFeed, ActivityItem } from "@/components/ui/activity-feed"
 import { useState, useEffect } from "react"
 import { fetchMentionsData, type MentionData } from "@/lib/actions"
 
 export function MentionsDetails() {
-  const [activities, setActivities] = useState<MentionData[]>([])
+  const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
