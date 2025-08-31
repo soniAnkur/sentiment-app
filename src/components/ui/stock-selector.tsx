@@ -12,17 +12,14 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export interface StockOption {
-  symbol: string
-  name: string
-  icon: string
-  price: number
-  change: number
-}
+import type { StockOption } from '@/lib/types'
+
+// Re-export for backward compatibility
+export type { StockOption } from '@/lib/types'
 
 interface StockSelectorProps {
   stocks: StockOption[]
-  selectedStock: StockOption
+  selectedStock: StockOption | null
   onStockChange: (stock: StockOption) => void
   className?: string
 }
@@ -33,6 +30,16 @@ export function StockSelector({
   onStockChange,
   className 
 }: StockSelectorProps) {
+  if (!selectedStock) {
+    return (
+      <Card className={cn("glass-card relative", className)}>
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="console-text">Loading stocks...</div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className={cn("glass-card relative", className)}>
       <div className="console-indicator top-left" />

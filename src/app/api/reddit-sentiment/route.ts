@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchRedditSentimentFromN8n, publishToN8n, n8nClient } from '@/lib/n8n'
-import { getStaticRedditData, generateFallbackRedditData } from '@/lib/static-reddit-data'
+import { getRedditData, generateMockRedditData } from '@/lib/data-service'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -8,22 +8,29 @@ export async function GET(request: NextRequest) {
   const subreddit = searchParams.get('subreddit') || 'stocks'
   const forceStatic = searchParams.get('static') === 'true'
 
-  // If static mode is forced, return static data immediately
+  // If static mode is forced, return centralized data immediately
   if (forceStatic) {
-    const staticData = getStaticRedditData(stock, subreddit)
-    if (staticData) {
-      return NextResponse.json({
-        ...staticData,
-        timestamp: new Date().toISOString(),
-        metadata: {
-          ...staticData.metadata,
-          processedAt: new Date().toISOString(),
-          source: 'static'
-        }
-      })
+    try {
+      const staticData = await getRedditData(stock, subreddit)
+      if (staticData) {
+        return NextResponse.json({
+          ...staticData,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            ...staticData.metadata,
+            processedAt: new Date().toISOString(),
+            source: 'static'
+          }
+        })
+      }
+      // Fall back to generated mock data if no static data exists
+      const mockData = await generateMockRedditData(stock, subreddit)
+      return NextResponse.json(mockData)
+    } catch (error) {
+      console.error('Error fetching static data:', error)
+      const mockData = await generateMockRedditData(stock, subreddit)
+      return NextResponse.json(mockData)
     }
-    // Fall back to generated mock data if no static data exists
-    return NextResponse.json(generateFallbackRedditData(stock, subreddit))
   }
 
   // Try to fetch from N8N workflow first
@@ -56,8 +63,8 @@ export async function GET(request: NextRequest) {
   const isN8nHealthy = await n8nClient.checkHealth()
   console.log(`N8N health status: ${isN8nHealthy ? 'healthy' : 'unavailable'}`)
 
-  // Use static data as primary fallback, then generated mock data
-  const fallbackData = generateFallbackRedditData(stock, subreddit)
+  // Use centralized data service as fallback
+  const fallbackData = await generateMockRedditData(stock, subreddit)
   
   // Still try to publish the fallback usage for monitoring
   try {

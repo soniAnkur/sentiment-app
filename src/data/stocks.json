@@ -1,0 +1,49 @@
+{
+  "stocks": [
+    {
+      "symbol": "AAPL",
+      "name": "Apple Inc. (AAPL)",
+      "icon": "🍎",
+      "price": 195.32,
+      "change": 2.4,
+      "sector": "Technology",
+      "marketCap": "3000000000000"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla Inc. (TSLA)",
+      "icon": "🚗",
+      "price": 248.85,
+      "change": -1.2,
+      "sector": "Automotive",
+      "marketCap": "800000000000"
+    },
+    {
+      "symbol": "GOOGL",
+      "name": "Alphabet Inc. (GOOGL)",
+      "icon": "🔍",
+      "price": 138.75,
+      "change": 0.8,
+      "sector": "Technology",
+      "marketCap": "1700000000000"
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft Corp. (MSFT)",
+      "icon": "💻",
+      "price": 415.20,
+      "change": 1.5,
+      "sector": "Technology",
+      "marketCap": "3100000000000"
+    },
+    {
+      "symbol": "AMZN",
+      "name": "Amazon Inc. (AMZN)",
+      "icon": "📦",
+      "price": 185.90,
+      "change": -0.5,
+      "sector": "E-commerce",
+      "marketCap": "1900000000000"
+    }
+  ]
+}

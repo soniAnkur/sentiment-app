@@ -1,0 +1,69 @@
+{
+  "fallbackMentions": [
+    {
+      "id": "fallback-1",
+      "platform": "twitter",
+      "content": "@TechAnalyst: iPhone 16 Pro pre-orders crushing expectations! 🚀 Apple's AI integration is a game-changer. $AAPL to $210 before earnings.",
+      "sentiment": "bullish",
+      "sentimentScore": 9.2,
+      "author": "TechAnalyst",
+      "timestamp": "2024-03-15T10:00:00Z",
+      "metadata": {
+        "likes": 342,
+        "retweets": 156
+      }
+    },
+    {
+      "id": "fallback-2",
+      "platform": "reddit",
+      "content": "Apple's services revenue growth trajectory looks unstoppable. The ecosystem lock-in effect is getting stronger with each product launch.",
+      "sentiment": "bullish",
+      "sentimentScore": 8.7,
+      "author": "reddit_user",
+      "timestamp": "2024-03-15T09:30:00Z",
+      "metadata": {
+        "upvotes": 89,
+        "comments": 34
+      }
+    },
+    {
+      "id": "fallback-3",
+      "platform": "stocktwits",
+      "content": "$AAPL hitting resistance at $195. Waiting for breakout confirmation before adding to position. China sales data will be key.",
+      "sentiment": "neutral",
+      "sentimentScore": 5.8,
+      "author": "trader123",
+      "timestamp": "2024-03-15T09:00:00Z",
+      "metadata": {
+        "bullish": 67,
+        "bearish": 23
+      }
+    },
+    {
+      "id": "fallback-4",
+      "platform": "twitter",
+      "content": "$TSLA FSD improvements are impressive but competition is heating up. Margins under pressure from price wars. Cautious outlook.",
+      "sentiment": "bearish",
+      "sentimentScore": 3.4,
+      "author": "EVAnalyst",
+      "timestamp": "2024-03-15T08:45:00Z",
+      "metadata": {
+        "likes": 234,
+        "retweets": 89
+      }
+    },
+    {
+      "id": "fallback-5",
+      "platform": "reddit",
+      "content": "Google Cloud gaining traction but YouTube ad revenue concerns persist. Mixed signals for $GOOGL near term.",
+      "sentiment": "neutral",
+      "sentimentScore": 5.2,
+      "author": "CloudWatcher",
+      "timestamp": "2024-03-15T08:30:00Z",
+      "metadata": {
+        "upvotes": 156,
+        "comments": 67
+      }
+    }
+  ]
+}

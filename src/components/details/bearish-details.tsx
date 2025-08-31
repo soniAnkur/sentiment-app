@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ActivityFeed, ActivityItem } from "@/components/ui/activity-feed"
 import { useState, useEffect } from "react"
-import { fetchMentionsData, type MentionData } from "@/lib/actions"
+import { fetchMentionsData } from "@/lib/actions"
+import type { MentionData } from "@/lib/types"
 
 export function BearishDetails() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
@@ -17,7 +18,22 @@ export function BearishDetails() {
         const mentions = await fetchMentionsData('AAPL', 20)
         // Filter for bearish sentiment only
         const bearishMentions = mentions.filter(m => m.sentiment === 'bearish')
-        setActivities(bearishMentions.map(mention => ({
+        
+        // If no bearish mentions from API, show empty state
+        if (bearishMentions.length === 0) {
+          setActivities([{
+            id: 'no-bearish',
+            platform: 'system',
+            content: 'No bearish sentiment found in recent mentions. This could indicate positive market sentiment for the selected stock.',
+            sentiment: 'neutral' as const,
+            sentimentScore: 5.0,
+            author: 'System',
+            timestamp: new Date().toISOString(),
+            metrics: {}
+          }])
+          return
+        }
+        setActivities(bearishMentions.slice(0, 10).map(mention => ({
           id: mention.id,
           platform: mention.platform,
           content: mention.content,
@@ -29,6 +45,17 @@ export function BearishDetails() {
         })))
       } catch (error) {
         console.error('Error loading bearish data:', error)
+        // Show system message on error
+        setActivities([{
+          id: 'error-loading',
+          platform: 'system',
+          content: 'Unable to load bearish sentiment data at this time. Please try again later.',
+          sentiment: 'neutral' as const,
+          sentimentScore: 5.0,
+          author: 'System',
+          timestamp: new Date().toISOString(),
+          metrics: {}
+        }])
       } finally {
         setLoading(false)
       }
@@ -160,38 +187,7 @@ export function BearishDetails() {
 
       {/* Top Bearish Mentions */}
       <ActivityFeed 
-        activities={activities.length > 0 ? activities : [
-          {
-            id: '1',
-            platform: 'reddit',
-            content: 'AAPL is looking overvalued at these levels. China sales are declining and competition is heating up. Might be time to take profits.',
-            sentiment: 'bearish' as const,
-            sentimentScore: 3.2,
-            author: 'ValueInvestor',
-            timestamp: new Date(Date.now() - 450000).toISOString(),
-            metrics: { upvotes: 78, comments: 23 }
-          },
-          {
-            id: '2',
-            platform: 'stocktwits',
-            content: '$AAPL facing headwinds in China. iPhone 15 sales disappointing vs expectations. Technical indicators showing weakness.',
-            sentiment: 'bearish' as const,
-            sentimentScore: 2.8,
-            author: 'BearTrader',
-            timestamp: new Date(Date.now() - 750000).toISOString(),
-            metrics: { bullish: 23, bearish: 87 }
-          },
-          {
-            id: '3',
-            platform: 'twitter',
-            content: 'Apple\'s growth story is getting tired. Services revenue growth slowing, hardware innovation lacking. Time to rotate out of $AAPL',
-            sentiment: 'bearish' as const,
-            sentimentScore: 2.5,
-            author: 'TechSkeptic',
-            timestamp: new Date(Date.now() - 1200000).toISOString(),
-            metrics: { likes: 89, retweets: 34 }
-          }
-        ]}
+        activities={activities.length > 0 ? activities : []}
       />
     </div>
   )

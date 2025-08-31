@@ -8,52 +8,19 @@ import { StockSelector, type StockOption } from '@/components/ui/stock-selector'
 import { ActivityFeed, type ActivityItem } from '@/components/ui/activity-feed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { fetchSentimentData, fetchMentionsData, type SentimentData } from '@/lib/actions'
+import { fetchSentimentData, fetchMentionsData } from '@/lib/actions'
+import { fetchStockOptions } from '@/lib/stock-actions'
+import type { SentimentData, StockOption } from '@/lib/types'
 
-const STOCK_OPTIONS: StockOption[] = [
-  {
-    symbol: 'AAPL',
-    name: 'Apple Inc. (AAPL)',
-    icon: '🍎',
-    price: 195.32,
-    change: 2.4
-  },
-  {
-    symbol: 'TSLA',
-    name: 'Tesla Inc. (TSLA)',
-    icon: '🚗',
-    price: 248.85,
-    change: -1.2
-  },
-  {
-    symbol: 'GOOGL',
-    name: 'Alphabet Inc. (GOOGL)',
-    icon: '🔍',
-    price: 138.75,
-    change: 0.8
-  },
-  {
-    symbol: 'MSFT',
-    name: 'Microsoft Corp. (MSFT)',
-    icon: '💻',
-    price: 415.20,
-    change: 1.5
-  },
-  {
-    symbol: 'AMZN',
-    name: 'Amazon Inc. (AMZN)',
-    icon: '📦',
-    price: 185.90,
-    change: -0.5
-  }
-]
 
 export function SentimentDashboard() {
-  const [selectedStock, setSelectedStock] = useState<StockOption>(STOCK_OPTIONS[0])
+  const [stockOptions, setStockOptions] = useState<StockOption[]>([])
+  const [selectedStock, setSelectedStock] = useState<StockOption | null>(null)
   const [sentimentData, setSentimentData] = useState<SentimentData | null>(null)
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [, startTransition] = useTransition()
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [loading, setLoading] = useState(true)
 
   const loadData = async (symbol: string) => {
     startTransition(async () => {
@@ -81,9 +48,30 @@ export function SentimentDashboard() {
     })
   }
 
+  // Load stock options on mount
   useEffect(() => {
-    loadData(selectedStock.symbol)
-  }, [selectedStock.symbol])
+    const loadStockOptions = async () => {
+      try {
+        const options = await fetchStockOptions()
+        setStockOptions(options)
+        if (options.length > 0 && !selectedStock) {
+          setSelectedStock(options[0])
+        }
+      } catch (error) {
+        console.error('Error loading stock options:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadStockOptions()
+  }, [])
+
+  // Load sentiment data when stock changes
+  useEffect(() => {
+    if (selectedStock) {
+      loadData(selectedStock.symbol)
+    }
+  }, [selectedStock])
 
   const handleStockChange = (stock: StockOption) => {
     setSelectedStock(stock)
@@ -97,7 +85,7 @@ export function SentimentDashboard() {
     window.location.href = `/details/${platform}`
   }
 
-  if (!sentimentData) {
+  if (loading || !selectedStock || !sentimentData) {
     return <div className="text-center py-8">Loading sentiment data...</div>
   }
 
@@ -105,7 +93,7 @@ export function SentimentDashboard() {
     <div className="space-y-6">
       {/* Stock Selector */}
       <StockSelector
-        stocks={STOCK_OPTIONS}
+        stocks={stockOptions}
         selectedStock={selectedStock}
         onStockChange={handleStockChange}
       />

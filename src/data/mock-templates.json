@@ -1,0 +1,69 @@
+{
+  "templates": {
+    "posts": [
+      {
+        "titleTemplate": "{stock} showing strong technical signals",
+        "contentTemplate": "Recent price action and volume patterns suggest underlying strength. The fundamentals also look solid based on the latest quarterly results.",
+        "author": "TechnicalAnalyst",
+        "upvotes": 245,
+        "comments": 67,
+        "sentiment": "bullish",
+        "sentimentScore": 78
+      },
+      {
+        "titleTemplate": "Concerns about {stock} valuation metrics",
+        "contentTemplate": "Current valuation seems stretched given the macroeconomic headwinds. Might be prudent to wait for a better entry point.",
+        "author": "ValueInvestor",
+        "upvotes": 134,
+        "comments": 45,
+        "sentiment": "bearish",
+        "sentimentScore": 25
+      },
+      {
+        "titleTemplate": "{stock} quarterly results discussion thread",
+        "contentTemplate": "Mixed results this quarter. Some positive developments but also areas of concern. Overall outlook remains uncertain.",
+        "author": "EarningsTracker",
+        "upvotes": 89,
+        "comments": 23,
+        "sentiment": "neutral",
+        "sentimentScore": 52
+      },
+      {
+        "titleTemplate": "Why {stock} could moon - DD inside",
+        "contentTemplate": "Comprehensive analysis showing multiple catalysts: new product launches, market expansion, and strong management team execution.",
+        "author": "DDMaster",
+        "upvotes": 512,
+        "comments": 156,
+        "sentiment": "bullish",
+        "sentimentScore": 85
+      },
+      {
+        "titleTemplate": "{stock} technical analysis - key levels to watch",
+        "contentTemplate": "Breaking down the charts and key support/resistance levels. Current price action suggests consolidation phase before next move.",
+        "author": "ChartWizard",
+        "upvotes": 178,
+        "comments": 34,
+        "sentiment": "neutral",
+        "sentimentScore": 48
+      }
+    ],
+    "bearishConcerns": [
+      {
+        "concern": "VALUATION_RISK",
+        "description": "High P/E ratio concerns amid economic uncertainty"
+      },
+      {
+        "concern": "COMPETITION_PRESSURE",
+        "description": "Increased competitive pressure impacting market share"
+      },
+      {
+        "concern": "REGULATORY_RISK",
+        "description": "Potential regulatory headwinds and compliance costs"
+      },
+      {
+        "concern": "MARKET_VOLATILITY",
+        "description": "General market uncertainty affecting sentiment"
+      }
+    ]
+  }
+}

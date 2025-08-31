@@ -5,37 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, ExternalLink, ArrowUp, MessageCircle, Send, Activity, Database, Wifi } from 'lucide-react'
+import { fetchRedditSentiment } from '@/lib/stock-actions'
 
-interface RedditPost {
-  id: string
-  title: string
-  content: string
-  author: string
-  upvotes: number
-  comments: number
-  sentiment: 'bullish' | 'bearish' | 'neutral'
-  sentimentScore: number
-  url: string
-  subreddit?: string
-}
-
-interface RedditSentimentData {
-  stock: string
-  platform: string
-  timestamp: string
-  totalMentions: number
-  sentimentScore: number
-  positivePercentage: number
-  negativePercentage: number
-  neutralPercentage: number
-  topPosts: RedditPost[]
-  metadata: {
-    subreddit: string
-    totalUpvotes: number
-    totalComments: number
-    processedAt: string
-  }
-}
+import type { RedditPost, RedditSentimentData } from '@/lib/types'
 
 export function RedditDetails() {
   const [data, setData] = useState<RedditSentimentData | null>(null)
@@ -49,30 +21,37 @@ export function RedditDetails() {
   const fetchRedditData = useCallback(async () => {
     setLoading(true)
     try {
-      // Build URL with static parameter if enabled
-      const url = `/api/reddit-sentiment?stock=${selectedStock}&subreddit=${selectedSubreddit}${useStaticData ? '&static=true' : ''}`
-      const response = await fetch(url)
-      
-      if (response.ok) {
-        const redditData = await response.json()
+      if (useStaticData) {
+        // Use centralized data service for static data
+        const redditData = await fetchRedditSentiment(selectedStock, selectedSubreddit)
         setData(redditData)
-        // Check data source and update status accordingly
-        const source = redditData.metadata?.source
-        if (useStaticData) {
-          setN8nStatus('disconnected') // Static mode is explicitly offline
-        } else {
-          setN8nStatus(source === 'n8n' ? 'connected' : 'disconnected')
-        }
-      } else {
-        // Final fallback to mock data
-        setData(generateMockRedditData())
         setN8nStatus('disconnected')
+      } else {
+        // Try API first, then fall back to centralized data
+        const url = `/api/reddit-sentiment?stock=${selectedStock}&subreddit=${selectedSubreddit}`
+        const response = await fetch(url)
+        
+        if (response.ok) {
+          const redditData = await response.json()
+          setData(redditData)
+          setN8nStatus(redditData.metadata?.source === 'n8n' ? 'connected' : 'disconnected')
+        } else {
+          // Fallback to centralized data service
+          const redditData = await fetchRedditSentiment(selectedStock, selectedSubreddit)
+          setData(redditData)
+          setN8nStatus('disconnected')
+        }
       }
     } catch (error) {
       console.error('Error fetching Reddit data:', error)
-      // Use mock data as fallback
-      setData(generateMockRedditData())
-      setN8nStatus('disconnected')
+      // Final fallback to centralized data service
+      try {
+        const redditData = await fetchRedditSentiment(selectedStock, selectedSubreddit)
+        setData(redditData)
+        setN8nStatus('disconnected')
+      } catch (fallbackError) {
+        console.error('Error with fallback data:', fallbackError)
+      }
     }
     setLoading(false)
   }, [selectedStock, selectedSubreddit, useStaticData])
@@ -113,93 +92,6 @@ export function RedditDetails() {
     setPublishingToN8n(false)
   }
 
-  const generateMockRedditData = (): RedditSentimentData => {
-    const mockPosts: RedditPost[] = [
-      {
-        id: 'post1',
-        title: `${selectedStock} is looking bullish - strong fundamentals and momentum`,
-        content: 'The technical analysis shows strong support levels and the company fundamentals are solid. This could be a good long-term play...',
-        author: 'InvestorPro',
-        upvotes: 245,
-        comments: 67,
-        sentiment: 'bullish',
-        sentimentScore: 78,
-        url: 'https://reddit.com/r/stocks/comments/example1',
-        subreddit: selectedSubreddit
-      },
-      {
-        id: 'post2',
-        title: `Concerns about ${selectedStock} - market volatility ahead`,
-        content: 'Recent earnings miss and market uncertainty make me cautious about this position. Might consider taking profits...',
-        author: 'CautiousTrader',
-        upvotes: 134,
-        comments: 45,
-        sentiment: 'bearish',
-        sentimentScore: 25,
-        url: 'https://reddit.com/r/stocks/comments/example2',
-        subreddit: selectedSubreddit
-      },
-      {
-        id: 'post3',
-        title: `${selectedStock} quarterly results discussion`,
-        content: 'Mixed results this quarter. Revenue beat expectations but margins compressed. Neutral outlook for now...',
-        author: 'AnalystView',
-        upvotes: 89,
-        comments: 23,
-        sentiment: 'neutral',
-        sentimentScore: 52,
-        url: 'https://reddit.com/r/stocks/comments/example3',
-        subreddit: selectedSubreddit
-      },
-      {
-        id: 'post4',
-        title: `Why ${selectedStock} could moon - DD inside`,
-        content: 'Comprehensive analysis showing multiple catalysts: new product launches, market expansion, and strong management...',
-        author: 'DDMaster',
-        upvotes: 512,
-        comments: 156,
-        sentiment: 'bullish',
-        sentimentScore: 85,
-        url: 'https://reddit.com/r/stocks/comments/example4',
-        subreddit: selectedSubreddit
-      },
-      {
-        id: 'post5',
-        title: `${selectedStock} technical analysis - key levels to watch`,
-        content: 'Breaking down the charts and key support/resistance levels. Current price action suggests consolidation...',
-        author: 'ChartWizard',
-        upvotes: 178,
-        comments: 34,
-        sentiment: 'neutral',
-        sentimentScore: 48,
-        url: 'https://reddit.com/r/stocks/comments/example5',
-        subreddit: selectedSubreddit
-      }
-    ]
-
-    const totalPosts = mockPosts.length
-    const bullishPosts = mockPosts.filter(p => p.sentiment === 'bullish').length
-    const bearishPosts = mockPosts.filter(p => p.sentiment === 'bearish').length
-    const neutralPosts = mockPosts.filter(p => p.sentiment === 'neutral').length
-
-    return {
-      stock: selectedStock,
-      platform: 'reddit',
-      timestamp: new Date().toISOString(),
-      totalMentions: totalPosts,
-      sentimentScore: Math.round(mockPosts.reduce((sum, post) => sum + post.sentimentScore, 0) / totalPosts),
-      positivePercentage: Math.round((bullishPosts / totalPosts) * 100),
-      negativePercentage: Math.round((bearishPosts / totalPosts) * 100),
-      neutralPercentage: Math.round((neutralPosts / totalPosts) * 100),
-      topPosts: mockPosts.sort((a, b) => b.upvotes - a.upvotes),
-      metadata: {
-        subreddit: selectedSubreddit,
-        totalUpvotes: mockPosts.reduce((sum, post) => sum + post.upvotes, 0),
-        totalComments: mockPosts.reduce((sum, post) => sum + post.comments, 0),
-        processedAt: new Date().toISOString()
-      }
-    }
-  }
 
   useEffect(() => {
     fetchRedditData()

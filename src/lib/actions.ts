@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getFallbackSentimentData, getFallbackMentionsData } from './data-service'
+import type { SentimentData, MentionData, HealthStatus } from './types'
 
 // N8N API Configuration
 const N8N_CONFIG = {
@@ -13,47 +15,7 @@ const N8N_CONFIG = {
   }
 }
 
-// Types
-export interface SentimentData {
-  symbol: string
-  sentimentScore: number
-  totalMentions: number
-  positivePercentage: number
-  negativePercentage: number
-  neutralPercentage: number
-  twitterMentions: number
-  redditMentions: number
-  stocktwitsMentions: number
-  sentimentTrend: number
-  volumeTrend: number
-  lastUpdated: string
-  isFallback?: boolean
-}
 
-export interface MentionData {
-  id: string
-  platform: string
-  content: string
-  sentiment: 'bullish' | 'bearish' | 'neutral'
-  sentimentScore: number
-  author: string
-  timestamp: string
-  metadata: {
-    likes?: number
-    retweets?: number
-    upvotes?: number
-    comments?: number
-    bullish?: number
-    bearish?: number
-  }
-}
-
-export interface HealthStatus {
-  status: 'healthy' | 'unhealthy' | 'unknown'
-  timestamp: string
-  services: Record<string, unknown>
-  error?: string
-}
 
 // Helper function to make N8N API calls
 async function fetchFromN8N(endpoint: string, params: Record<string, unknown> = {}) {
@@ -87,97 +49,6 @@ async function fetchFromN8N(endpoint: string, params: Record<string, unknown> = 
   }
 }
 
-// Fallback data for when API is unavailable
-function getFallbackSentimentData(symbol: string): SentimentData {
-  const fallbackData: Record<string, Partial<SentimentData>> = {
-    AAPL: {
-      sentimentScore: 87,
-      totalMentions: 3200,
-      positivePercentage: 76,
-      negativePercentage: 18,
-      neutralPercentage: 6,
-      twitterMentions: 1200,
-      redditMentions: 856,
-      stocktwitsMentions: 432,
-      sentimentTrend: 12.3,
-    },
-    TSLA: {
-      sentimentScore: 79,
-      totalMentions: 2800,
-      positivePercentage: 68,
-      negativePercentage: 22,
-      neutralPercentage: 10,
-      twitterMentions: 1100,
-      redditMentions: 950,
-      stocktwitsMentions: 750,
-      sentimentTrend: 8.7,
-    },
-    GOOGL: {
-      sentimentScore: 72,
-      totalMentions: 1900,
-      positivePercentage: 62,
-      negativePercentage: 25,
-      neutralPercentage: 13,
-      twitterMentions: 780,
-      redditMentions: 680,
-      stocktwitsMentions: 440,
-      sentimentTrend: 5.2,
-    },
-  }
-
-  const data = fallbackData[symbol] || fallbackData['AAPL']
-  
-  return {
-    symbol,
-    sentimentScore: data.sentimentScore!,
-    totalMentions: data.totalMentions!,
-    positivePercentage: data.positivePercentage!,
-    negativePercentage: data.negativePercentage!,
-    neutralPercentage: data.neutralPercentage!,
-    twitterMentions: data.twitterMentions!,
-    redditMentions: data.redditMentions!,
-    stocktwitsMentions: data.stocktwitsMentions!,
-    sentimentTrend: data.sentimentTrend!,
-    volumeTrend: Math.random() * 10 - 5, // Random between -5 and 5
-    lastUpdated: new Date().toISOString(),
-    isFallback: true,
-  }
-}
-
-function getFallbackMentionsData(): MentionData[] {
-  return [
-    {
-      id: 'fallback-1',
-      platform: 'twitter',
-      content: '@TechAnalyst: iPhone 16 Pro pre-orders crushing expectations! 🚀 Apple\'s AI integration is a game-changer. $AAPL to $210 before earnings.',
-      sentiment: 'bullish',
-      sentimentScore: 9.2,
-      author: 'TechAnalyst',
-      timestamp: new Date(Date.now() - 134000).toISOString(),
-      metadata: { likes: 342, retweets: 156 },
-    },
-    {
-      id: 'fallback-2',
-      platform: 'reddit',
-      content: 'Apple\'s services revenue growth trajectory looks unstoppable. The ecosystem lock-in effect is getting stronger with each product launch.',
-      sentiment: 'bullish',
-      sentimentScore: 8.7,
-      author: 'reddit_user',
-      timestamp: new Date(Date.now() - 522000).toISOString(),
-      metadata: { upvotes: 89, comments: 34 },
-    },
-    {
-      id: 'fallback-3',
-      platform: 'stocktwits',
-      content: '$AAPL hitting resistance at $195. Waiting for breakout confirmation before adding to position. China sales data will be key.',
-      sentiment: 'neutral',
-      sentimentScore: 5.8,
-      author: 'trader123',
-      timestamp: new Date(Date.now() - 923000).toISOString(),
-      metadata: { bullish: 67, bearish: 23 },
-    },
-  ]
-}
 
 // Server Actions
 export async function fetchSentimentData(symbol: string = 'AAPL'): Promise<SentimentData> {
@@ -204,7 +75,7 @@ export async function fetchSentimentData(symbol: string = 'AAPL'): Promise<Senti
     throw new Error('Invalid response format from N8N')
   } catch (error) {
     console.warn(`Using fallback data for ${symbol} due to API error:`, error)
-    return getFallbackSentimentData(symbol)
+    return await getFallbackSentimentData(symbol)
   }
 }
 
@@ -232,7 +103,7 @@ export async function fetchMentionsData(symbol: string = 'AAPL', limit: number =
     throw new Error('Invalid mentions response format')
   } catch (error) {
     console.warn(`Using fallback mentions for ${symbol} due to API error:`, error)
-    return getFallbackMentionsData()
+    return await getFallbackMentionsData()
   }
 }
 

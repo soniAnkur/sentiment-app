@@ -1,0 +1,64 @@
+{
+  "fallbackSentimentData": {
+    "AAPL": {
+      "sentimentScore": 87,
+      "totalMentions": 3200,
+      "positivePercentage": 76,
+      "negativePercentage": 18,
+      "neutralPercentage": 6,
+      "twitterMentions": 1200,
+      "redditMentions": 856,
+      "stocktwitsMentions": 432,
+      "sentimentTrend": 12.3,
+      "volumeTrend": 8.5
+    },
+    "TSLA": {
+      "sentimentScore": 79,
+      "totalMentions": 2800,
+      "positivePercentage": 68,
+      "negativePercentage": 22,
+      "neutralPercentage": 10,
+      "twitterMentions": 1100,
+      "redditMentions": 950,
+      "stocktwitsMentions": 750,
+      "sentimentTrend": 8.7,
+      "volumeTrend": -2.3
+    },
+    "GOOGL": {
+      "sentimentScore": 72,
+      "totalMentions": 1900,
+      "positivePercentage": 62,
+      "negativePercentage": 25,
+      "neutralPercentage": 13,
+      "twitterMentions": 780,
+      "redditMentions": 680,
+      "stocktwitsMentions": 440,
+      "sentimentTrend": 5.2,
+      "volumeTrend": 3.1
+    },
+    "MSFT": {
+      "sentimentScore": 81,
+      "totalMentions": 2100,
+      "positivePercentage": 71,
+      "negativePercentage": 19,
+      "neutralPercentage": 10,
+      "twitterMentions": 890,
+      "redditMentions": 720,
+      "stocktwitsMentions": 490,
+      "sentimentTrend": 9.4,
+      "volumeTrend": 5.7
+    },
+    "AMZN": {
+      "sentimentScore": 75,
+      "totalMentions": 2400,
+      "positivePercentage": 64,
+      "negativePercentage": 24,
+      "neutralPercentage": 12,
+      "twitterMentions": 980,
+      "redditMentions": 810,
+      "stocktwitsMentions": 610,
+      "sentimentTrend": 6.8,
+      "volumeTrend": -1.2
+    }
+  }
+}
