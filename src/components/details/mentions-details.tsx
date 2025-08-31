@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ActivityFeed, ActivityItem } from "@/components/ui/activity-feed"
 import { useState, useEffect } from "react"
-import { fetchMentionsData, type MentionData } from "@/lib/actions"
+import { fetchMentionsData } from "@/lib/actions"
+import type { MentionData } from "@/lib/types"
 
 export function MentionsDetails() {
   const [activities, setActivities] = useState<ActivityItem[]>([])

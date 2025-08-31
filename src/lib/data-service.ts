@@ -143,7 +143,7 @@ export async function generateMockRedditData(stock: string, subreddit: string): 
     const templates = await readJsonFile<{ templates: { posts: unknown[] } }>('mock-templates.json')
     const postTemplates = templates.templates.posts
 
-    const mockPosts: RedditPost[] = postTemplates.map((template: Record<string, unknown>, index) => ({
+    const mockPosts: RedditPost[] = (postTemplates as Record<string, unknown>[]).map((template, index) => ({
       id: `mock_post_${index + 1}`,
       title: (template.titleTemplate as string).replace('{stock}', stock),
       content: template.contentTemplate as string,

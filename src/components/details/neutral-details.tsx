@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ActivityFeed, ActivityItem } from "@/components/ui/activity-feed"
 import { useState, useEffect } from "react"
-import { fetchMentionsData, type MentionData } from "@/lib/actions"
+import { fetchMentionsData } from "@/lib/actions"
+import type { MentionData } from "@/lib/types"
 
 export function NeutralDetails() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
